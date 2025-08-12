@@ -1,4 +1,8 @@
+using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,7 +42,7 @@ public partial class HomeViewModel: ViewModelBase
 
         if (files.Count >= 1)
         {
-            UpdateSelectedFileAsync(files[0]);
+            await UpdateSelectedFileAsync(files[0]);
         }
     }
 
@@ -46,11 +50,39 @@ public partial class HomeViewModel: ViewModelBase
     {
         SelectedFile = file;
 
+        var root = new Node("root");
         var fs = await file.OpenReadAsync();
+        using (var reader = new BinaryReader(fs))
+        {
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+            ReadAtoms(root, reader);
+
+            
+            
+        }
+        
         fs.Close();
         
+        Nodes.Add(root);
+        /*
         var item = new Node("moov");
         item.Children.Add(new Node("faac"));
         Nodes.Add(item);
+        */
+    }
+
+    private static void ReadAtoms(Node root, BinaryReader reader)
+    {
+        while (reader.BaseStream.Position < reader.BaseStream.Length)
+        {
+            var atomSizeBytes = reader.ReadBytes(4).Reverse().ToArray();
+            var atomTypeBytes = reader.ReadBytes(4);
+            var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
+            var atomType = Encoding.Default.GetString(atomTypeBytes);
+            root.Children.Add(new Node($"{atomType} ({atomSize})"));
+            reader.BaseStream.Seek(atomSize - 8,SeekOrigin.Current);
+        }
+
     }
 }
