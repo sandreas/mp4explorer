@@ -9,6 +9,11 @@ public class Atom
     public long Position { get; set; } = 0;
     public long Size { get; set; } = 0;
     public long End => Position + Size;
+    
+    public byte[] Flags { get; set; }
+    
+    public byte Version { get; set; }
+    
     public List<Atom> Children { get; set; }
     
 
