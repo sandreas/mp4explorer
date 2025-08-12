@@ -51,6 +51,7 @@ public partial class HomeViewModel: ViewModelBase
     {
         SelectedFile = file;
 
+        Nodes.Clear();
         var fs = await file.OpenReadAsync();
         var mp4 = new Mp4AtomReader();
         using (var reader = new BinaryReader(fs))
