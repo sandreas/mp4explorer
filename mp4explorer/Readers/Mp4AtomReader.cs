@@ -35,20 +35,20 @@ public class Mp4AtomReader
         {
             var position = reader.BaseStream.Position;
             var atomSizeBytes = reader.ReadBytes(4).Reverse().ToArray();
-            var atomTypeBytes = reader.ReadBytes(4);
-            var atomType = DecodeAtomName(atomTypeBytes);
+            var atomNameBytes = reader.ReadBytes(4);
+            var atomName = DecodeAtomName(atomNameBytes);
             var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
 
-            var subAtom = new Atom(atomType, position, atomSize);
+            var subAtom = new Atom(atomName, position, atomSize);
             
             // meta has to be handled differently
-            if (atomType == "meta")
+            if (atomName == "meta")
             {
                 subAtom.Version = reader.ReadByte();
                 subAtom.Flags = reader.ReadBytes(3);
             }
             
-            if (atomSize > 0 && IsAtomTypeSupported(atomType) && subAtom.End <= baseAtom.End)
+            if (atomSize > 0 && IsAtomTypeSupported(atomName) && subAtom.End <= baseAtom.End)
             {
                 ReadSubAtoms(reader, subAtom, asList);
                 baseAtom.AddChild(subAtom);
