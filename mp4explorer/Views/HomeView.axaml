@@ -10,5 +10,19 @@
         <vm:HomeViewModel />
     </Design.DataContext>
 
-    <TextBlock Text="Testing"></TextBlock>
+    <Grid RowDefinitions="Auto,*">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding SelectedFile.Name}"/>
+            <Button Grid.Column="1" Command="{Binding PickFileCommand}">
+                Pick file
+            </Button>
+        </Grid>
+        <TreeView Grid.Row="1" ItemsSource="{Binding Nodes}">
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding Title}"/>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+    </Grid>
 </UserControl>

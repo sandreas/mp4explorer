@@ -3,9 +3,11 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.SimpleRouter;
 using Microsoft.Extensions.DependencyInjection;
+using mp4explorer.Services;
 using mp4explorer.ViewModels;
 using mp4explorer.Views;
 
@@ -14,7 +16,6 @@ namespace mp4explorer;
 public partial class App : Application
 {
     private readonly IServiceProvider _services = ConfigureServices();
-
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -22,8 +23,10 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        
         var mainViewModel = _services.GetRequiredService<MainViewModel>();
-
+        var storageProvider = _services.GetRequiredService<StorageProviderService>();
+        
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
@@ -35,6 +38,7 @@ public partial class App : Application
             {
                 DataContext = mainViewModel
             };
+            UpdateStorageProvider(storageProvider, desktop.MainWindow);
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
         {
@@ -42,6 +46,7 @@ public partial class App : Application
             {
                 DataContext = mainViewModel
             };
+            UpdateStorageProvider(storageProvider, singleViewPlatform.MainView);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -59,18 +64,23 @@ public partial class App : Application
             BindingPlugins.DataValidators.Remove(plugin);
         }
     }
-    
+
+    private static void UpdateStorageProvider(StorageProviderService storageProvider, Visual visual)
+    {
+        storageProvider.StorageProvider = TopLevel.GetTopLevel(visual)?.StorageProvider;
+    }
     
     private static ServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
-        // Add the HistoryRouter as a service
+        services.AddSingleton<StorageProviderService>();
         services.AddSingleton<HistoryRouter<ViewModelBase>>(s => new HistoryRouter<ViewModelBase>(t => (ViewModelBase)s.GetRequiredService(t)));
 
         // Add the ViewModels as a service (Main as singleton, others as transient)
         services.AddSingleton<MainViewModel>();
         services.AddTransient<HomeViewModel>();
         // services.AddTransient<SettingsViewModel>();
+
         return services.BuildServiceProvider();
     }
 }
