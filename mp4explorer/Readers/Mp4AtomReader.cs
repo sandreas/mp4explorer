@@ -58,21 +58,25 @@ public class Mp4AtomReader
 
     private void ReadSubAtoms(BinaryReader reader, Atom baseAtom)
     {
-        var position = reader.BaseStream.Position;
-        var atomSizeBytes = reader.ReadBytes(4).Reverse().ToArray();
-        var atomTypeBytes = reader.ReadBytes(4);
-        var atomType = Encoding.Default.GetString(atomTypeBytes);
-        var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
+        while (reader.BaseStream.Position < baseAtom.End)
+        {
+            var position = reader.BaseStream.Position;
+            var atomSizeBytes = reader.ReadBytes(4).Reverse().ToArray();
+            var atomTypeBytes = reader.ReadBytes(4);
+            var atomType = Encoding.Default.GetString(atomTypeBytes);
+            var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
 
 
-        if (atomSize > 0 && DefinedAtomTypes.Contains(atomType) && position + atomSize < baseAtom.Position + baseAtom.Size)
-        {
-            var subAtom = new Atom(atomType, position, atomSize);
-            ReadSubAtoms(reader, subAtom);
-            baseAtom.AddChild(subAtom);
-        } else
-        {
-            reader.BaseStream.Seek(baseAtom.Position + baseAtom.Size, SeekOrigin.Begin);
+            if (atomSize > 0 && DefinedAtomTypes.Contains(atomType) && position + atomSize < baseAtom.Position + baseAtom.Size)
+            {
+                var subAtom = new Atom(atomType, position, atomSize);
+                ReadSubAtoms(reader, subAtom);
+                baseAtom.AddChild(subAtom);
+            } else
+            {
+                reader.BaseStream.Seek(baseAtom.End, SeekOrigin.Begin);
+            }
         }
+        
     }
 }
