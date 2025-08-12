@@ -60,5 +60,5 @@ public class Mp4AtomReader
         
     }
 
-    private static bool IsAtomTypeSupported(string atomType) => atomType.All(c => char.IsLetter(c) || c == '-' || c == '©');
+    private static bool IsAtomTypeSupported(string atomType) => atomType.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '©');
 }
