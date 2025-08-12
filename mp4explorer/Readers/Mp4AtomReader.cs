@@ -9,68 +9,6 @@ namespace mp4explorer.Readers;
 
 public class Mp4AtomReader
 {
-    // ©,-,a-z,A-Z
-    public static List<string> DefinedAtomTypes = [
-            "ftyp",
-            "free",
-            "mdat",
-            "moov",
-            "mvhd",
-            "trak",
-            "tkhd",
-            "udta",
-            "edts",
-            "elst",
-            "mdia",
-            "mdhd",
-            "hdlr",
-            "minf",
-            "smhd",
-            "dinf",
-            "dref",
-            "stbl",
-            "stsd",
-            "stts",
-            "stsc",
-            "stsz",
-            "stco",
-            "sgpd",
-            "roll",
-            "sbgp",
-            "tref",
-            "chap",
-            "meta",
-            "chpl",
-            "gmhd",
-            "gmin",
-            "text",
-            "hldr",
-            "ilst",
-            "©ART",
-            "data",
-            "©nam",
-            "©alb",
-            "©gen",
-            "©wrt",
-            "cprt",
-            "desc",
-            "ldes",
-            "©cmt",
-            "©day",
-            "©too",
-            "purd",
-            "stik",
-            "pgap",
-            "©nrt",
-            "----",
-            "covr",
-            "mean",
-            "name",
-            "©mvn",
-            "soal",
-            "soal",
-            
-        ];
     public Atom ReadAtoms(BinaryReader reader) {
         reader.BaseStream.Seek(0, SeekOrigin.Begin);
         var baseAtom = new Atom("root", 0, reader.BaseStream.Length);
@@ -80,6 +18,7 @@ public class Mp4AtomReader
 
     private string DecodeAtomName(byte[] bytes)
     {
+        // todo: this works for my test files, but does it always work?
         return Encoding.Latin1.GetString(bytes);
 
         if (bytes[0] == 0xA9)
@@ -92,13 +31,6 @@ public class Mp4AtomReader
     
     private void ReadSubAtoms(BinaryReader reader, Atom baseAtom, bool asList = false)
     {
-        /*
-        if (baseAtom.Name == "meta")
-        {
-            File.WriteAllBytes("/home/andreas/Downloads/Das Siegel von Rapgar/meta-dump.dat", reader.ReadBytes((int)(baseAtom.End - baseAtom.Position)));
-            reader.BaseStream.Seek(baseAtom.Position, SeekOrigin.Begin);
-        }
-        */
         while (reader.BaseStream.Position < baseAtom.End)
         {
             var position = reader.BaseStream.Position;
@@ -108,13 +40,14 @@ public class Mp4AtomReader
             var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
 
             var subAtom = new Atom(atomType, position, atomSize);
+            
+            // meta has to be handled differently
             if (atomType == "meta")
             {
                 subAtom.Version = reader.ReadByte();
                 subAtom.Flags = reader.ReadBytes(3);
             }
             
-
             if (atomSize > 0 && IsAtomTypeSupported(atomType) && subAtom.End <= baseAtom.End)
             {
                 ReadSubAtoms(reader, subAtom, asList);
@@ -127,9 +60,5 @@ public class Mp4AtomReader
         
     }
 
-    private static bool IsAtomTypeSupported(string atomType)
-    {
-        return atomType.All(c => char.IsLetter(c) || c == '-' || c == '©');
-
-    }
+    private static bool IsAtomTypeSupported(string atomType) => atomType.All(c => char.IsLetter(c) || c == '-' || c == '©');
 }
