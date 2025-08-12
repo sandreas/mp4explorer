@@ -49,10 +49,7 @@ public class Mp4AtomReader
     public Atom ReadAtoms(BinaryReader reader) {
         reader.BaseStream.Seek(0, SeekOrigin.Begin);
         var baseAtom = new Atom("root", 0, reader.BaseStream.Length);
-        while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-            ReadSubAtoms(reader, baseAtom);
-        }
+        ReadSubAtoms(reader, baseAtom);
         return baseAtom;
     }
 
@@ -66,10 +63,10 @@ public class Mp4AtomReader
             var atomType = Encoding.Default.GetString(atomTypeBytes);
             var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
 
+            var subAtom = new Atom(atomType, position, atomSize);
 
-            if (atomSize > 0 && DefinedAtomTypes.Contains(atomType) && position + atomSize < baseAtom.Position + baseAtom.Size)
+            if (atomSize > 0 && DefinedAtomTypes.Contains(atomType) && subAtom.End <= baseAtom.End)
             {
-                var subAtom = new Atom(atomType, position, atomSize);
                 ReadSubAtoms(reader, subAtom);
                 baseAtom.AddChild(subAtom);
             } else
