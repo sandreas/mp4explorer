@@ -8,6 +8,7 @@ using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using mp4explorer.Models;
+using mp4explorer.Readers;
 using mp4explorer.Services;
 
 namespace mp4explorer.ViewModels;
@@ -20,7 +21,7 @@ public partial class HomeViewModel: ViewModelBase
     private IStorageFile? _selectedFile;
     
     
-    public ObservableCollection<Node> Nodes{ get; } = new();
+    public ObservableCollection<Atom> Nodes{ get; } = new();
     
     public HomeViewModel(StorageProviderService storage)
     {
@@ -50,39 +51,13 @@ public partial class HomeViewModel: ViewModelBase
     {
         SelectedFile = file;
 
-        var root = new Node("root");
         var fs = await file.OpenReadAsync();
+        var mp4 = new Mp4AtomReader();
         using (var reader = new BinaryReader(fs))
         {
-            reader.BaseStream.Seek(0, SeekOrigin.Begin);
-
-            ReadAtoms(root, reader);
-
-            
-            
+            var atom = mp4.ReadAtoms(reader);
+            Nodes.Add(atom);
         }
-        
         fs.Close();
-        
-        Nodes.Add(root);
-        /*
-        var item = new Node("moov");
-        item.Children.Add(new Node("faac"));
-        Nodes.Add(item);
-        */
-    }
-
-    private static void ReadAtoms(Node root, BinaryReader reader)
-    {
-        while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-            var atomSizeBytes = reader.ReadBytes(4).Reverse().ToArray();
-            var atomTypeBytes = reader.ReadBytes(4);
-            var atomSize = BitConverter.ToInt32(atomSizeBytes, 0);
-            var atomType = Encoding.Default.GetString(atomTypeBytes);
-            root.Children.Add(new Node($"{atomType} ({atomSize})"));
-            reader.BaseStream.Seek(atomSize - 8,SeekOrigin.Current);
-        }
-
     }
 }
